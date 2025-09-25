@@ -47,7 +47,7 @@ operations
 
 ### 1. Clone or Download the Project
 # Option 1: Clone with Git
-git clone https://github.com/dharanikandikonda7/PythonFullStackProject
+git clone <repository-url>
 
 # Option 2: Download and extract the ZIP file
 
