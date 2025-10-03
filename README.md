@@ -15,7 +15,6 @@ It helps users study efficiently by creating and reviewing flashcards. Users can
 - **Review Mode:** Retry flashcards answered incorrectly.  
 - **Persistent Data Storage:** All flashcards and progress stored in Supabase.  
 
-
 ## Project structure
 FLASHCARDQ&A/
 |
@@ -35,6 +34,8 @@ operations
 |---README.md     # Project Documentation
 |
 |---.env          # Python Variables (supabase)
+
+
 
 
 ## Quick Start
@@ -107,16 +108,24 @@ SUPABASE_KEY=YOUR_ANON_KEY_HERE
 ## Streamlit Fronted
 streamlit run frontend/app.py
 
-The app will open inyour browser at `http://localhost:8501`
+The app will open inyour browser at `http://localhost:8000`
 
 ## FastAPI Backend
 
 cd api
 python main.py
 
-The app will be available at `http://localhost:8501`
+The app will be available at `http://localhost:8000`
 
 ### How to use
+
+Add flashcards manually or upload PDFs
+
+Start a quiz session to practice questions
+
+Submit your answers and get instant feedback
+
+Track your progress with performance graphs
 
 ## Techical Details
 
@@ -151,29 +160,137 @@ The app will be available at `http://localhost:8501`
 
 ## Common Issues
 
-1. **"Module not found" errors**
-        make sure you've
+1. **"Module not found" errors**  
+    make sure you've installed all Python dependencies and that Python can find your packages.  
+    - Install deps:  
+      ```bash
+      pip install -r requirements.txt
+      ```
+    - Ensure your package folders are importable (either add `__init__.py` files or run with the project root on `PYTHONPATH`). Examples:
+      - Add `__init__.py` (empty) to `api/` and `src/`.
+      - Or set `PYTHONPATH` (mac / linux):
+        ```bash
+        export PYTHONPATH=$(pwd)
+        uvicorn api.main:app --reload --port 8000
+        ```
+        (PowerShell)
+        ```powershell
+        $env:PYTHONPATH = (Get-Location).Path
+        uvicorn api.main:app --reload --port 8000
+        ```
+    - If you use relative imports, run uvicorn with module form from project root:
+      ```bash
+      uvicorn api.main:app --reload --port 8000
+      ```
+
+2. **Supabase connection errors / invalid credentials**  
+    make sure you've added correct Supabase variables to `.env` and loaded them.  
+    - `.env` should include:
+      ```env
+      SUPABASE_URL=https://your-project.supabase.co
+      SUPABASE_KEY=your_anon_or_service_key
+      ```
+    - Verify the values are not expired/rotated and that your network allows outbound HTTPS to Supabase.
+
+3. **"Could not find table 'public.xxx' / SQL errors**  
+    make sure you've created the required tables in Supabase (run the SQL in the README).  
+    - Double-check table names and schema (usually `public`).  
+    - Run the SQL in Supabase → SQL Editor and confirm tables exist.
+
+4. **Streamlit: `File does not exist: app.py`**  
+    make sure you run Streamlit from the folder containing `app.py`, or provide full path:  
+    ```bash
+    # if app.py is inside frontend/
+    streamlit run frontend/app.py
+    ```
+    run `dir` (Windows) or `ls` (mac/linux) to confirm file location.
+
+5. **Uvicorn import / relative import errors**  
+    common cause: running from wrong directory or missing `__init__.py`.  
+    - Use absolute imports (`from src.logic import ...`) and run from project root.  
+    - Or run with `python -m uvicorn api.main:app --reload` to ensure package imports resolve.
+
+6. **Port already in use**  
+    change port or kill existing process. Example (Windows):
+    ```powershell
+    netstat -ano | findstr 8000
+    taskkill /PID <pid> /F
+    ```
+    or start uvicorn on a different port:
+    ```bash
+    uvicorn api.main:app --reload --port 8001
+    ```
+
+7. **CORS errors when frontend calls backend**  
+    ensure your FastAPI has CORS configured (allow origins for Streamlit). Example in `api/main.py`:
+    ```python
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:8501","http://127.0.0.1:8501"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    ```
+
+8. **PDF upload / PyPDF2 extraction errors**  
+    - Verify the uploaded file is a valid PDF and saved successfully before processing.  
+    - For large PDFs, processing may take time—check server logs and increase timeouts if needed.  
+    - Confirm `PyPDF2` version in `requirements.txt` and that it is installed.
+
+9. **OneDrive / Windows file-lock & permission issues**  
+    if your project is inside OneDrive, files may be locked or synced. Try moving the project to a non-OneDrive folder (e.g., `C:\projects\FlashCardQ&A`) and re-run.
+
+10. **API returns unexpected JSON / frontend errors when parsing**  
+    - Inspect API response with `print(resp.status_code, resp.text)` in the frontend or use Postman/curl to check exact shape.  
+    - Make sure frontend `requests` code expects the same structure your backend returns (e.g., `{"Success": True, "data": [...]}` vs `[...]`).
+
+---
+
+## Quick Debug Steps (summary)
+- Activate virtual env: `venv\Scripts\activate` (Windows) or `source venv/bin/activate` (mac/linux)  
+- Install deps: `pip install -r requirements.txt`  
+- Confirm `.env` values and restart server(s).  
+- Start backend from project root: `uvicorn api.main:app --reload --port 8000`  
+- Start frontend with correct path: `streamlit run frontend/app.py`  
+- If something fails, copy & paste the *full traceback* into the issue — that makes fixing much faster.
+
+---
 
 ## Future Enhancements
- 
- Ideas for extending the Flashcard Quiz App:
-**Multi-User Support**: Enable login/signup so multiple users can manage their own flashcards and progress.
 
-**Flashcard Categories / Topics**: Organize flashcards by subjects (e.g., Math, History) and allow category-based quizzes.
+- **Multi-User Support (Auth & Profiles)**  
+  Add sign-up / sign-in (JWT or Supabase Auth) so each user has a personal set of flashcards and progress.
 
-**Analytics Dashboard**: Show charts for quizzes taken, correct vs incorrect answers, and performance trends over time.
+- **Flashcard Categories / Topics**  
+  Add a `topic` column and UI filters so users can choose a subject-specific quiz.
 
-**Spaced Repetition**: Use algorithms to repeat difficult flashcards more frequently for better retention.
+- **Spaced Repetition Scheduler**  
+  Implement an SRS algorithm (e.g., SM-2) to surface cards at optimal intervals for retention.
 
-**Enhanced PDF Processing**: Automatically generate Q&A from PDFs, highlight key terms, and create multiple-choice questions.
+- **Analytics Dashboard**  
+  Track per-user metrics: daily accuracy, average response time, most-missed cards; show charts and trends.
 
-**Mobile-Friendly Interface**: Optimize layout for phones and tablets for on-the-go studying.
+- **Enhanced PDF Processing**  
+  Improve Q&A generation using NLP (OpenAI or local ML models): extract key sentences, generate Q/A, and optional multiple-choice.
 
-**Export / Import Flashcards**: Allow saving and loading flashcards via CSV or JSON files.
+- **Import / Export (CSV / JSON)**  
+  Allow users to import large decks or export their decks and progress for backup or sharing.
 
-**Gamification**: Add badges, streaks, or rewards to motivate regular practice.
+- **Mobile-Friendly UI**  
+  Improve responsive layout and test on mobile browsers (or create a PWA).
 
+- **Gamification**  
+  Badges, streaks, leaderboards, and small rewards to motivate daily practice.
 
+- **Offline Mode / Local Cache**  
+  Keep a lightweight local cache of flashcards so users can practice without a network connection, syncing when back online.
+
+- **Role-based Admin Panel**  
+  Admin UI to moderate uploaded PDFs, review auto-generated flashcards and manage content quality.
+
+---
 
 ## Support
 
