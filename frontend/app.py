@@ -77,13 +77,22 @@ elif menu == "Progress":
     st.title("📊 Your Progress")
 
     if st.session_state.answered > 0:
-        acc = (st.session_state.score / st.session_state.answered) * 100
-        st.write(f"✅ Correct: {st.session_state.score}")
-        st.write(f"❌ Incorrect: {st.session_state.answered - st.session_state.score}")
-        st.write(f"📈 Accuracy: {acc:.2f}%")
+        correct = st.session_state.score
+        incorrect = st.session_state.answered - correct
+        accuracy = (correct / st.session_state.answered) * 100
+
+        st.write(f"✅ Correct: {correct}")
+        st.write(f"❌ Incorrect: {incorrect}")
+        st.write(f"📈 Accuracy: {accuracy:.2f}%")
+
+        # Pie Chart for performance visualization
+        labels = ["Correct", "Incorrect"]
+        values = [correct, incorrect]
+        colors = ["#4CAF50", "#F44336"]
 
         fig, ax = plt.subplots()
-        ax.bar(["Correct", "Incorrect"], [st.session_state.score, st.session_state.answered - st.session_state.score])
+        ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90, colors=colors)
+        ax.axis("equal")  # Equal aspect ratio ensures the pie is circular
         st.pyplot(fig)
     else:
         st.info("⚠️ No quiz attempts yet.")
